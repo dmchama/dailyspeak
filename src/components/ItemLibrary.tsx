@@ -39,7 +39,7 @@ export async function ItemLibrary({ kind, q }: { kind: "word" | "phrase"; q: str
               </div>
               {kind === "word" && <p className="text-xs text-slate-500">{d.pronunciation} {d.partOfSpeech && `· ${d.partOfSpeech}`}</p>}
               <p className="text-slate-700">{kind === "word" ? d.definition : d.meaning}</p>
-              {sinhala && d.sinhala && <p className="text-slate-600">සිංහල: {d.sinhala}</p>}
+              {sinhala && d.sinhala && <p lang="si" className="text-slate-600">සිංහල: {d.sinhala}</p>}
               <p className="text-slate-500 italic">“{d.itExample}”</p>
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {r.learned_at ? <span className="chip bg-emerald-50 text-emerald-700">Learned</span> : <span className="chip bg-slate-100 text-slate-600">New</span>}

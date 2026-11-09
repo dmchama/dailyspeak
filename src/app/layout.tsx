@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { Noto_Sans_Sinhala } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+
+// Bundled with the app so Sinhala meanings render correctly on devices without a Sinhala font.
+const sinhala = Noto_Sans_Sinhala({ subsets: ["sinhala"], weight: ["400", "600", "700"], variable: "--font-sinhala", display: "swap", adjustFontFallback: false });
 
 export const metadata: Metadata = {
   title: "DailySpeak – English Practice for Professionals",
@@ -17,7 +21,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={sinhala.variable}>
       <body className="min-h-screen antialiased">
         {children}
         <ServiceWorkerRegistrar />

@@ -16,7 +16,7 @@ export function PhrasesCard({ phrases, showSinhala, done, onDone }: { phrases: P
               <SpeakButton text={p.phrase} />
             </div>
             <p><b className="text-slate-700">Meaning:</b> {p.meaning}</p>
-            {showSinhala && p.sinhala && <p className="text-slate-700"><b>සිංහල:</b> {p.sinhala}</p>}
+            {showSinhala && p.sinhala && <p lang="si" className="text-slate-700"><b>සිංහල:</b> {p.sinhala}</p>}
             <p className="text-slate-600"><b className="text-slate-700">When to use it:</b> {p.whenToUse}</p>
             <Example tag="💼 IT" text={p.itExample} />
             <Example tag="🏠 Daily" text={p.dailyExample} />

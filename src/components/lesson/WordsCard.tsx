@@ -26,7 +26,7 @@ export function WordsCard({ words, showSinhala, done, onDone }: { words: Word[];
             {open === i && (
               <div className="space-y-2 border-t border-slate-100 px-3 pb-3 pt-2 text-sm">
                 <p><b className="text-slate-700">Meaning:</b> {w.definition}</p>
-                {showSinhala && w.sinhala && <p className="text-slate-700"><b>සිංහල:</b> {w.sinhala}</p>}
+                {showSinhala && w.sinhala && <p lang="si" className="text-slate-700"><b>සිංහල:</b> {w.sinhala}</p>}
                 <Example tag="💼 IT" text={w.itExample} />
                 <Example tag="🏠 Daily" text={w.dailyExample} />
               </div>

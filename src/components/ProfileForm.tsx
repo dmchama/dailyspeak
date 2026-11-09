@@ -116,7 +116,7 @@ export function ProfileForm({ initial, variant }: { initial?: Partial<Values>; v
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <Option title="English only" hint="Simple English explanations" active={v.explanation_language === "english"} onClick={() => set("explanation_language", "english")} />
-            <Option title="English + සිංහල" hint="Show Sinhala meanings for words and phrases" active={v.explanation_language === "english_sinhala"} onClick={() => set("explanation_language", "english_sinhala")} />
+            <Option title="English + Sinhala (සිංහල)" hint="Show Sinhala meanings for words and phrases" active={v.explanation_language === "english_sinhala"} onClick={() => set("explanation_language", "english_sinhala")} />
           </div>
           <div>
             <label className="label">Daily practice time</label>
