@@ -8,12 +8,18 @@ export function LessonPreparing() {
   const [err, setErr] = useState("");
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/lessons/today", { method: "POST" })
-      .then(async (r) => {
-        if (!r.ok) throw new Error((await r.json()).error);
-        if (!cancelled) router.refresh();
-      })
-      .catch((e) => setErr(e.message || "Could not prepare the lesson"));
+    // Keep asking until the lesson is ready (another request may still be generating it).
+    const attempt = async (n: number): Promise<void> => {
+      const r = await fetch("/api/lessons/today", { method: "POST" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Could not prepare the lesson");
+      if (cancelled) return;
+      if (d.lesson?.status === "ready") return router.refresh();
+      if (n >= 6) throw new Error("Your lesson is taking longer than usual. Please try again in a minute.");
+      await new Promise((res) => setTimeout(res, 4000));
+      return attempt(n + 1);
+    };
+    attempt(1).catch((e) => !cancelled && setErr(e.message || "Could not prepare the lesson"));
     return () => { cancelled = true; };
   }, [router]);
   return (

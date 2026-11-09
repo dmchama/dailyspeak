@@ -1,7 +1,10 @@
+import { after } from "next/server";
 import { query } from "@/lib/db";
 import { error, json, withUser } from "@/lib/api";
 import { ProfileInput } from "@/lib/profile-schema";
 import { ensureTodaysLesson } from "@/lib/lessons/service";
+
+export const maxDuration = 120;
 
 /** Saves the onboarding profile (also used by Settings) and starts generating today's lesson. */
 export const POST = withUser(async (user, _profile, req) => {
@@ -15,7 +18,8 @@ export const POST = withUser(async (user, _profile, req) => {
        preferred_time=$8, timezone=$9, interests=$10, notify_push=$11, notify_email=$12, onboarded=true, updated_at=now()`,
     [user.id, p.profession, p.domain, p.level, p.goal, p.explanation_language, p.daily_minutes, p.preferred_time, p.timezone, p.interests, p.notify_push, p.notify_email],
   );
-  // Kick off today's lesson in the background so it's ready when the dashboard loads.
-  ensureTodaysLesson(user.id).catch((e) => console.error("[onboarding] lesson generation failed", e));
+  // Generate today's lesson after the response is sent. `after()` keeps the function alive on
+  // serverless platforms (Vercel), where a plain un-awaited promise could be frozen mid-generation.
+  after(() => ensureTodaysLesson(user.id).catch((e) => console.error("[onboarding] lesson generation failed", e)));
   return json({ ok: true });
 });

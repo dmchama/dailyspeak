@@ -57,6 +57,8 @@ export async function sendPush(userId: number, payload: { title: string; body: s
 export async function sendEmail(to: string, subject: string, text: string, html: string) {
   const from = process.env.EMAIL_FROM || "DailySpeak <no-reply@dailyspeak.app>";
   if (!process.env.SMTP_HOST) {
+    // Serverless filesystems are read-only, so there's nowhere to write the outbox.
+    if (process.env.VERCEL) return { status: "skipped" as const, detail: "SMTP not configured" };
     // Development mode: write the email to ./outbox so it can be inspected.
     const dir = join(process.cwd(), "outbox");
     await mkdir(dir, { recursive: true });

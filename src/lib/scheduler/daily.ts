@@ -1,5 +1,5 @@
 import { query, withClient } from "../db";
-import { ensureLesson } from "../lessons/service";
+import { ensureLesson, getLesson } from "../lessons/service";
 import { sendDailyNotifications } from "../notify";
 import { hhmmToMinutes, localDate, localMinutes } from "../time";
 import type { Profile } from "../types";
@@ -12,6 +12,8 @@ export type TickSummary = {
   generated: number;
   notified: number;
   skippedLocked?: boolean;
+  /** users whose lesson generation was postponed to the next tick because the time budget ran out */
+  deferred: number;
   errors: string[];
 };
 
@@ -21,23 +23,35 @@ export type TickSummary = {
  *     (lessons are pre-generated as soon as the local day starts, so they're ready before the reminder).
  *  2. Once the user's local time reaches their preferred learning time, send notifications once.
  */
-export async function runDailyTick(now: Date = new Date()): Promise<TickSummary> {
+export async function runDailyTick(now: Date = new Date(), opts: { budgetMs?: number } = {}): Promise<TickSummary> {
+  const startedAt = Date.now();
+  const overBudget = () => opts.budgetMs !== undefined && Date.now() - startedAt > opts.budgetMs;
   return withClient(async (client) => {
     const lock = await client.query<{ ok: boolean }>("SELECT pg_try_advisory_lock($1) AS ok", [LOCK_KEY]);
-    if (!lock.rows[0].ok) return { at: now.toISOString(), users: 0, generated: 0, notified: 0, skippedLocked: true, errors: [] };
+    if (!lock.rows[0].ok) return { at: now.toISOString(), users: 0, generated: 0, notified: 0, deferred: 0, skippedLocked: true, errors: [] };
     const run = await client.query<{ id: string }>("INSERT INTO job_runs (job) VALUES ('daily_tick') RETURNING id");
-    const summary: TickSummary = { at: now.toISOString(), users: 0, generated: 0, notified: 0, errors: [] };
+    const summary: TickSummary = { at: now.toISOString(), users: 0, generated: 0, notified: 0, deferred: 0, errors: [] };
     try {
       const users = await query<Profile & { id: string; email: string; name: string }>(
-        `SELECT u.id, u.email, u.name, p.* FROM users u JOIN profiles p ON p.user_id=u.id WHERE p.onboarded`,
+        `SELECT u.id, u.email, u.name, p.* FROM users u JOIN profiles p ON p.user_id=u.id WHERE p.onboarded ORDER BY u.id`,
       );
       summary.users = users.length;
       for (const u of users) {
         const userId = Number(u.id);
         try {
           const date = localDate(u.timezone, now);
-          const { lesson, created } = await ensureLesson(userId, date);
-          if (created) summary.generated++;
+          // Serverless functions have a time limit: once the budget is used up, only send notifications for
+          // lessons that already exist and leave new generation to the next tick (the job is idempotent).
+          let lesson = overBudget() ? await getLesson(userId, date) : null;
+          if (!lesson) {
+            if (overBudget()) {
+              summary.deferred++;
+              continue;
+            }
+            const r = await ensureLesson(userId, date);
+            lesson = r.lesson;
+            if (r.created) summary.generated++;
+          }
           const mins = localMinutes(u.timezone, now);
           if (lesson.status === "ready" && mins >= hhmmToMinutes(u.preferred_time)) {
             const sent = await sendDailyNotifications({ id: userId, email: u.email, name: u.name }, { ...u, user_id: userId }, date, mins, lesson.content);

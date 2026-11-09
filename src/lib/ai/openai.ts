@@ -16,7 +16,7 @@ type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 export async function chat(messages: ChatMessage[], opts: { json?: boolean; temperature?: number; timeoutMs?: number } = {}): Promise<string> {
   if (!aiEnabled()) throw new Error("OPENAI_API_KEY is not configured");
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 90_000);
+  const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? Number(process.env.OPENAI_TIMEOUT_MS || 45_000));
   try {
     const res = await fetch(`${baseUrl()}/chat/completions`, {
       method: "POST",

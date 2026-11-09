@@ -3,6 +3,8 @@ import { error, json } from "@/lib/api";
 import { runDailyTick } from "@/lib/scheduler/daily";
 
 export const dynamic = "force-dynamic";
+// Vercel Hobby with Fluid compute allows up to 300 s. We stop starting new lesson generations after
+// CRON_TIME_BUDGET_SECONDS (default 200 s) so a run always finishes cleanly; the rest happens on the next tick.
 export const maxDuration = 300;
 
 /**
@@ -15,7 +17,8 @@ async function handler(req: Request) {
   if (!secret || given.length !== secret.length || !timingSafeEqual(Buffer.from(given), Buffer.from(secret))) {
     return error("Unauthorized", 401);
   }
-  const summary = await runDailyTick();
+  const budgetMs = Number(process.env.CRON_TIME_BUDGET_SECONDS || 200) * 1000;
+  const summary = await runDailyTick(new Date(), { budgetMs });
   return json(summary);
 }
 export const GET = handler;

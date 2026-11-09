@@ -11,7 +11,8 @@ export function getPool(): Pool {
     if (!connectionString) throw new Error("DATABASE_URL is not set");
     globalThis.__dailyspeakPool = new Pool({
       connectionString,
-      max: 10,
+      // Keep this small on serverless (each instance has its own pool). Default: 3 on Vercel, 10 elsewhere.
+      max: Number(process.env.DB_POOL_MAX || (process.env.VERCEL ? 3 : 10)),
       ssl: /supabase|sslmode=require/.test(connectionString) ? { rejectUnauthorized: false } : undefined,
     });
   }

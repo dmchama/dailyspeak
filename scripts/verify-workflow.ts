@@ -209,6 +209,18 @@ async function main() {
   assert.deepEqual(pr.pronunciationReport!.missed, ["identified", "cause"]);
   ok(`read-aloud pronunciation check: ${pr.pronunciationReport!.accuracy}% matched, practise: ${pr.pronunciationReport!.missed.join(", ")}`);
 
+  section("Serverless time budget – generation is deferred, reminders still go out");
+  const late = await createUser("Kamal", "Asia/Colombo", "06:00");
+  const sb = await runDailyTick(new Date("2026-11-10T03:00:00Z"), { budgetMs: 0 });
+  const kamalLesson = await queryOne("SELECT id FROM lessons WHERE user_id=$1", [late.id]);
+  assert.equal(kamalLesson, null);
+  assert.ok(sb.deferred >= 1);
+  ok(`budget used up → ${sb.deferred} user(s) deferred to the next tick, nothing half-generated`);
+  const sb2 = await runDailyTick(new Date("2026-11-10T03:00:00Z"));
+  assert.equal(sb2.deferred, 0);
+  assert.ok(await queryOne("SELECT id FROM lessons WHERE user_id=$1 AND status='ready'", [late.id]));
+  ok("next tick generates the deferred lesson");
+
   section("AI path – mock OpenAI-compatible server");
   let mode: "good" | "bad" = "good";
   let aiCalls = 0;
