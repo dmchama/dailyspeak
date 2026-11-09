@@ -13,7 +13,8 @@
     "vapid": "tsx scripts/generate-vapid.ts",
     "worker": "tsx scripts/worker.ts",
     "cron:once": "tsx scripts/run-daily-job.ts",
-    "verify": "tsx scripts/verify-workflow.ts"
+    "verify": "tsx scripts/verify-workflow.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "next": "^15.5.29",
